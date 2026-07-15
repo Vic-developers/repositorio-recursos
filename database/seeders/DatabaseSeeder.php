@@ -12,19 +12,14 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        if (Tenant::where('slug', 'principal')->exists()) {
+        $tenant = Tenant::firstOrCreate(
+            ['slug' => 'principal'],
+            ['name' => 'Institución Principal', 'is_active' => true, 'settings' => ['locale' => 'es', 'timezone' => 'America/Mexico_City']]
+        );
+
+        if (User::where('email', 'admin@repositorio.edu')->exists()) {
             return;
         }
-
-        $tenant = Tenant::create([
-            'name' => 'Institución Principal',
-            'slug' => 'principal',
-            'is_active' => true,
-            'settings' => [
-                'locale' => 'es',
-                'timezone' => 'America/Mexico_City',
-            ],
-        ]);
 
         $defaults = [
             'general' => ['system_name' => 'Repositorio Educativo', 'system_description' => 'Plataforma de recursos educativos', 'default_language' => 'es', 'timezone' => 'America/Mexico_City', 'logo_url' => ''],
@@ -34,7 +29,10 @@ class DatabaseSeeder extends Seeder
         ];
         foreach ($defaults as $module => $settings) {
             foreach ($settings as $key => $value) {
-                Setting::create(['tenant_id' => $tenant->id, 'module' => $module, 'key' => $key, 'value' => $value]);
+                Setting::firstOrCreate(
+                    ['tenant_id' => $tenant->id, 'module' => $module, 'key' => $key],
+                    ['value' => $value]
+                );
             }
         }
 
