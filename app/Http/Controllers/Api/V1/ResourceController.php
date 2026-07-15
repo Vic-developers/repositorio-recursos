@@ -82,9 +82,11 @@ class ResourceController extends Controller
                 $data['file_size_bytes'] = $file->getSize();
                 $data['file_size_display'] = $this->formatBytes($file->getSize());
 
-                if ($this->scormService->isScormPackage($file->getRealPath())) {
+                // Use stored file path instead of temp path (Octane compat)
+                $storedPath = storage_path('app/public/' . $path);
+                if (file_exists($storedPath) && $this->scormService->isScormPackage($storedPath)) {
                     $data['type'] = 'SCORM';
-                    $extractDir = $this->scormService->extractPackage($data['uuid'], $file->getRealPath());
+                    $extractDir = $this->scormService->extractPackage($data['uuid'], $storedPath);
                 }
             }
 
@@ -122,9 +124,10 @@ class ResourceController extends Controller
                 $data['file_size_bytes'] = $file->getSize();
                 $data['file_size_display'] = $this->formatBytes($file->getSize());
 
-                if ($this->scormService->isScormPackage($file->getRealPath())) {
+                $storedPath = storage_path('app/public/' . $path);
+                if (file_exists($storedPath) && $this->scormService->isScormPackage($storedPath)) {
                     $data['type'] = 'SCORM';
-                    $this->scormService->extractPackage($resource->uuid, $file->getRealPath());
+                    $this->scormService->extractPackage($resource->uuid, $storedPath);
                 }
             }
 
@@ -234,9 +237,10 @@ class ResourceController extends Controller
             'file_size_display' => $this->formatBytes($file->getSize()),
         ];
 
-        if ($this->scormService->isScormPackage($file->getRealPath())) {
+        $storedPath = storage_path('app/public/' . $path);
+        if (file_exists($storedPath) && $this->scormService->isScormPackage($storedPath)) {
             $result['is_scorm'] = true;
-            $this->scormService->extractPackage($uuid, $file->getRealPath());
+            $this->scormService->extractPackage($uuid, $storedPath);
             $result['scorm_launch_file'] = $this->scormService->getLaunchFilePath($uuid);
         }
 

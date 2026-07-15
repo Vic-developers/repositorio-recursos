@@ -42,15 +42,36 @@ class ScormService
     {
         $extractDir = $this->storagePath . '/' . $resourceId;
         if (!is_dir($extractDir)) {
-            mkdir($extractDir, 0755, true);
+            @mkdir($extractDir, 0755, true);
         }
-        
+
+        if (!is_dir($extractDir) || !is_writable($extractDir)) {
+            logger()->error('SCORM: Cannot create or write to extract dir', ['dir' => $extractDir]);
+            return $extractDir;
+        }
+
+        if (!file_exists($filePath)) {
+            logger()->error('SCORM: File not found for extraction', ['path' => $filePath]);
+            return $extractDir;
+        }
+
+        if (!extension_loaded('zip')) {
+            logger()->error('SCORM: zip extension not loaded');
+            return $extractDir;
+        }
+
         $zip = new \ZipArchive();
-        if ($zip->open($filePath) === true) {
-            $zip->extractTo($extractDir);
+        $status = $zip->open($filePath);
+        if ($status === true) {
+            $extracted = $zip->extractTo($extractDir);
             $zip->close();
+            if (!$extracted) {
+                logger()->error('SCORM: extractTo failed', ['dir' => $extractDir]);
+            }
+        } else {
+            logger()->error('SCORM: zip open failed', ['status' => $status, 'path' => $filePath]);
         }
-        
+
         return $extractDir;
     }
 
