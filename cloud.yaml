@@ -6,25 +6,8 @@ environments:
       - 'composer install --no-interaction --optimize-autoloader'
       - 'php artisan storage:link'
     deploy:
+      - 'touch database/database.sqlite'
       - 'php artisan key:generate --force'
       - 'php artisan migrate --force'
       - 'php artisan db:seed --force'
-    env:
-      APP_ENV: production
-      APP_DEBUG: false
-      DB_CONNECTION: mysql
-      SESSION_DRIVER: cookie
-      FILESYSTEM_DISK: public
-
-database:
-  production:
-    type: mysql
-    engine: mysql
-    version: 8.0
-    storage: 5
-
-storage:
-  production:
-    - disk: public
-      bucket: public-storage
-      type: local
+    runtime: php-8.2
