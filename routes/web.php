@@ -17,6 +17,30 @@ Route::post('/login', [WebAuthController::class, 'login']);
 Route::get('/embed/{uuid}', EmbedController::class)->name('embed.player');
 Route::get('/player/{uuid}', PlayerController::class)->name('player.show');
 
+// Serve SCORM files directly (for Cloud/deployed environments)
+Route::get('/scorm-file/{uuid}/{path?}', function (string $uuid, string $path = '') {
+    $basePath = storage_path('app/public/scorm/' . $uuid);
+    $fullPath = $path ? $basePath . '/' . ltrim($path, '/') : $basePath;
+    if (!file_exists($fullPath)) {
+        abort(404);
+    }
+    $mime = match (pathinfo($fullPath, PATHINFO_EXTENSION)) {
+        'html', 'htm' => 'text/html',
+        'js' => 'application/javascript',
+        'css' => 'text/css',
+        'xml' => 'application/xml',
+        'json' => 'application/json',
+        'png' => 'image/png',
+        'jpg', 'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml',
+        'woff' => 'font/woff',
+        'woff2' => 'font/woff2',
+        default => mime_content_type($fullPath) ?: 'application/octet-stream',
+    };
+    return response()->file($fullPath, ['Content-Type' => $mime]);
+})->where('path', '.*')->name('scorm.file');
+
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
