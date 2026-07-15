@@ -16,8 +16,8 @@ class EmbedController extends Controller
         }
         
         $scormService = app(ScormService::class);
-        $launchPath = $scormService->getLaunchFilePath($resource->uuid);
-        $scormContentUrl = route('scorm.file', ['uuid' => $resource->uuid, 'path' => $launchPath]);
+        $launchFile = $scormService->getLaunchFile($resource->uuid);
+        $scormContentUrl = route('scorm.file', ['uuid' => $resource->uuid, 'path' => $launchFile]);
         
         // Increment view count
         $resource->increment('view_count');
