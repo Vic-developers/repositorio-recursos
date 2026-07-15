@@ -32,22 +32,14 @@
     </div>
 
     <script>
-    // ===== SCORM 1.2 API =====
     (function() {
         var scormData = {};
         var lastError = 0;
         var errorStrings = {
-            0: 'No error',
-            101: 'General exception',
-            201: 'Invalid argument error',
-            202: 'Element cannot have children',
-            203: 'Element not an array - cannot have children',
-            301: 'Not initialized',
-            401: 'Not implemented error',
-            402: 'Invalid set value, element is a keyword',
-            403: 'Element is read only',
-            404: 'Element is write only',
-            405: 'Incorrect data type'
+            0: 'No error', 101: 'General exception', 201: 'Invalid argument error',
+            202: 'Element cannot have children', 203: 'Element not an array - cannot have children',
+            301: 'Not initialized', 401: 'Not implemented error', 402: 'Invalid set value, element is a keyword',
+            403: 'Element is read only', 404: 'Element is write only', 405: 'Incorrect data type'
         };
 
         window.API = {
@@ -59,18 +51,13 @@
                 lastError = 201;
                 return '';
             },
-            LMSSetValue: function(name, value) {
-                lastError = 0;
-                scormData[name] = value;
-                return 'true';
-            },
+            LMSSetValue: function(name, value) { lastError = 0; scormData[name] = value; return 'true'; },
             LMSCommit: function() { lastError = 0; return 'true'; },
             LMSGetLastError: function() { return lastError; },
             LMSGetErrorString: function(code) { return errorStrings[code] || 'Unknown error'; },
             LMSGetDiagnostic: function(code) { return errorStrings[code] || 'Unknown error'; }
         };
 
-        // ===== SCORM 2004 API =====
         window.API_1484_11 = {
             Initialize: function() { lastError = 0; return 'true'; },
             Terminate: function() { lastError = 0; return 'true'; },
@@ -80,11 +67,7 @@
                 lastError = 201;
                 return '';
             },
-            SetValue: function(name, value) {
-                lastError = 0;
-                scormData[name] = value;
-                return 'true';
-            },
+            SetValue: function(name, value) { lastError = 0; scormData[name] = value; return 'true'; },
             Commit: function() { lastError = 0; return 'true'; },
             GetLastError: function() { return lastError; },
             GetErrorString: function(code) { return errorStrings[code] || 'Unknown error'; },
@@ -92,21 +75,37 @@
         };
     })();
 
-    // Load SCORM content
     document.addEventListener('DOMContentLoaded', function() {
         var iframe = document.getElementById('scormFrame');
         var loader = document.getElementById('loader');
         var content = document.getElementById('content');
-        
-        iframe.onload = function() {
+        var errorContainer = document.getElementById('errorContainer');
+        var loaded = false;
+
+        function showContent() {
+            if (loaded) return;
+            loaded = true;
             loader.style.display = 'none';
             content.style.display = 'block';
-        };
-        
-        iframe.onerror = function() {
+        }
+
+        function showError() {
+            if (loaded) return;
+            loaded = true;
             loader.style.display = 'none';
-            document.getElementById('errorContainer').style.display = 'flex';
-        };
+            errorContainer.style.display = 'flex';
+        }
+
+        iframe.addEventListener('load', showContent);
+        iframe.addEventListener('error', showError);
+
+        // Timeout: if content doesn't load within 30s, show error
+        setTimeout(function() {
+            if (!loaded) {
+                errorContainer.querySelector('p').textContent = 'El contenido SCORM tardó demasiado en cargar. Verifica que el archivo SCORM sea válido y esté correctamente subido.';
+                showError();
+            }
+        }, 30000);
     });
     </script>
 </body>

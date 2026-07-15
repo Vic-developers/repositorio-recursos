@@ -22,9 +22,12 @@ class EmbedController extends Controller
         // Increment view count
         $resource->increment('view_count');
         
-        return view('embed.player', [
-            'resource' => $resource,
-            'scormContentUrl' => $scormContentUrl,
-        ]);
+        return response()
+            ->view('embed.player', [
+                'resource' => $resource,
+                'scormContentUrl' => $scormContentUrl,
+            ])
+            ->header('X-Frame-Options', 'ALLOWALL')
+            ->header('Content-Security-Policy', "frame-ancestors *");
     }
 }
