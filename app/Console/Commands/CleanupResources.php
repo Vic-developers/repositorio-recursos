@@ -11,12 +11,12 @@ use Illuminate\Support\Facades\Storage;
 
 class CleanupResources extends Command
 {
-    protected $signature = 'cleanup:all';
+    protected $signature = 'cleanup:all {--force : Skip confirmation}';
     protected $description = 'Delete all resources, folders, categories and tags';
 
     public function handle()
     {
-        if (!$this->confirm('This will DELETE all resources, folders, categories and tags. Continue?')) {
+        if (!$this->option('force') && !$this->confirm('This will DELETE all resources, folders, categories and tags. Continue?')) {
             return Command::SUCCESS;
         }
 
