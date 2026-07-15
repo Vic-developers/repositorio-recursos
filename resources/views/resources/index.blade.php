@@ -119,7 +119,10 @@
         {{-- Grid View --}}
         <div x-show="!loading && viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <template x-for="resource in resources" :key="resource.id">
-                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all duration-200 group">
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all duration-200 group"
+                     draggable="true"
+                     x-on:dragstart="dragStart(resource, $event)"
+                     x-on:dragend="dragEnd()">
                     <a :href="'{{ url('/player') }}/' + resource.uuid" class="block">
                         <div class="h-36 flex items-center justify-center relative overflow-hidden"
                              :style="'background:' + bgGrad(resource.type)">
@@ -252,6 +255,20 @@
 
 @include('components.share-dialog')
 @include('components.delete-confirm')
+
+{{-- Trash drop zone --}}
+<div id="trash-zone" style="display:none"
+     class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300"
+     ondragover="event.preventDefault(); this.querySelector('div').className='bg-red-50 border-2 border-red-500 bg-red-100 rounded-2xl px-8 py-4 flex items-center gap-3 shadow-lg scale-110'"
+     ondragleave="event.preventDefault(); this.querySelector('div').className='bg-red-50 border-2 border-dashed border-red-300 rounded-2xl px-8 py-4 flex items-center gap-3 shadow-lg'"
+     ondrop="event.preventDefault(); dropOnTrash(event); this.style.display='none'">
+    <div class="bg-red-50 border-2 border-dashed border-red-300 rounded-2xl px-8 py-4 flex items-center gap-3 shadow-lg">
+        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+        <span class="text-sm font-medium text-red-700">Arrastra un recurso aquí para eliminar</span>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -421,5 +438,37 @@ function confirmDelete(resource) {
     const event = new CustomEvent('open-delete', { detail: resource });
     window.dispatchEvent(event);
 }
+
+// Drag to trash
+let draggedResource = null;
+
+function dragStart(resource, event) {
+    draggedResource = resource;
+    event.dataTransfer.effectAllowed = 'move';
+    // Show trash zone
+    const zone = document.getElementById('trash-zone');
+    if (zone) zone.removeAttribute('x-cloak');
+}
+
+function dragEnd() {
+    draggedResource = null;
+    const zone = document.getElementById('trash-zone');
+    if (zone) zone.setAttribute('x-cloak', '');
+}
+
+function dropOnTrash(event) {
+    if (draggedResource) {
+        confirmDelete(draggedResource);
+    }
+    draggedResource = null;
+    document.getElementById('trash-zone')?.setAttribute('x-cloak', '');
+}
+
+document.addEventListener('dragenter', function(e) {
+    const zone = document.getElementById('trash-zone');
+    if (zone && zone.getAttribute('x-cloak') !== null) {
+        zone.removeAttribute('x-cloak');
+    }
+});
 </script>
 @endpush

@@ -32,6 +32,7 @@ Route::prefix('v1')->group(function () {
         Route::get('resources/{resource}', [ResourceController::class, 'show']);
         Route::put('resources/{resource}', [ResourceController::class, 'update']);
         Route::delete('resources/{resource}', [ResourceController::class, 'destroy']);
+        Route::post('resources/{resource}/delete', [ResourceController::class, 'destroy']);
         Route::patch('resources/{resource}/restore', [ResourceController::class, 'restore']);
         Route::delete('resources/{resource}/force', [ResourceController::class, 'forceDelete']);
         Route::post('resources/{resource}/duplicate', [ResourceController::class, 'duplicate']);
