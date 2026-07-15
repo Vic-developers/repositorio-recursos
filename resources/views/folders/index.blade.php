@@ -111,11 +111,10 @@
         <div class="relative bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
             <h3 class="text-lg font-semibold text-gray-900 mb-2">Eliminar carpeta</h3>
             <p class="text-sm text-gray-600 mb-1">¿Estás seguro de eliminar la carpeta <strong x-text="deleteTarget?.name"></strong>?</p>
-            <p class="text-xs text-gray-500 mb-6" x-show="deleteTarget?.resources_count > 0">Tiene <span x-text="deleteTarget?.resources_count"></span> recurso(s). No se puede eliminar si contiene recursos.</p>
-            <p class="text-xs text-gray-500 mb-6" x-show="!deleteTarget?.resources_count || deleteTarget?.resources_count == 0">Los recursos se moverán a la raíz.</p>
+            <p class="text-xs text-gray-500 mb-6">Los recursos se moverán a la raíz y las subcarpetas se reasignarán.</p>
             <div class="flex justify-end gap-3">
                 <button x-on:click="showDeleteModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100">Cancelar</button>
-                <button x-on:click="deleteFolder()" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">Eliminar</button>
+                <button x-on:click="deleteFolder()" :disabled="deleting" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"><span x-show="!deleting">Eliminar</span><span x-show="deleting">Eliminando...</span></button>
             </div>
         </div>
     </div>
@@ -132,6 +131,7 @@ function foldersManager() {
         showEditModal: false,
         showDeleteModal: false,
         deleteTarget: null,
+        deleting: false,
         editTarget: null,
         createForm: { name: '', description: '' },
         editForm: { name: '', description: '' },
@@ -223,6 +223,7 @@ function foldersManager() {
 
         async deleteFolder() {
             if (!this.deleteTarget) return;
+            this.deleting = true;
             try {
                 const res = await fetch('/api/v1/folders/' + this.deleteTarget.id, {
                     method: 'DELETE',
@@ -243,6 +244,8 @@ function foldersManager() {
             } catch (e) {
                 console.error('Error deleting folder:', e);
                 window.showToast('Error de conexión. Intenta de nuevo.', 'error');
+            } finally {
+                this.deleting = false;
             }
         }
     }

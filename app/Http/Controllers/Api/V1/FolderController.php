@@ -9,6 +9,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Folder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class FolderController extends Controller
@@ -63,14 +64,22 @@ class FolderController extends Controller
     {
         $folder = Folder::inTenant()->findOrFail($id);
 
-        if ($folder->resources()->count() > 0) {
-            return ApiResponse::error('Cannot delete folder with resources', 409);
+        // Move resources to root folder
+        $folder->resources()->update(['folder_id' => null]);
+
+        // Re-parent child folders to parent
+        Folder::where('parent_id', $id)->update(['parent_id' => $folder->parent_id]);
+
+        // Delete SCORM files if any
+        foreach ($folder->resources as $resource) {
+            if ($resource->isScorm()) {
+                Storage::disk('public')->deleteDirectory('scorm/' . $resource->uuid);
+            }
         }
 
-        Folder::where('parent_id', $id)->update(['parent_id' => $folder->parent_id]);
         $folder->delete();
 
-        return ApiResponse::success(null, 'Folder deleted');
+        return ApiResponse::success(null, 'Carpeta eliminada correctamente');
     }
 
     private function buildTree($folders, $parentId = null): array

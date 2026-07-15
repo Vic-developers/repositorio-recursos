@@ -66,12 +66,17 @@ function deleteConfirm() {
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
                 });
+                const json = await response.json().catch(() => ({}));
                 if (response.ok) {
                     this.show = false;
-                    window.location.reload();
+                    window.showToast('Recurso enviado a la papelera.', 'success');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    window.showToast(json.message || 'Error al eliminar. Intenta de nuevo.', 'error');
                 }
             } catch (e) {
                 console.error('Error deleting resource:', e);
+                window.showToast('Error de conexión. Intenta de nuevo.', 'error');
             } finally {
                 this.deleting = false;
             }

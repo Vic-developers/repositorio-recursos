@@ -4,6 +4,8 @@ environments:
     build:
       - 'cp .env.example .env'
       - 'composer install --no-interaction --optimize-autoloader'
+      - 'npm install'
+      - 'npm run build'
       - 'php artisan storage:link'
     deploy:
       - 'php artisan key:generate --force'
