@@ -1,0 +1,23 @@
+id: repositorio-recursos
+environments:
+  production:
+    build:
+      - 'composer install --no-interaction --optimize-autoloader'
+      - 'php artisan storage:link'
+    deploy:
+      - 'php artisan migrate --force'
+      - 'php artisan db:seed --force'
+    runtime: php-8.2
+
+database:
+  production:
+    type: mysql
+    engine: mysql
+    version: 8.0
+    storage: 5
+
+storage:
+  production:
+    - disk: public
+      bucket: public-storage
+      type: local
