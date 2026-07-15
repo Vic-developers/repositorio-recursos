@@ -2,12 +2,19 @@ id: repositorio-recursos
 environments:
   production:
     build:
+      - 'cp .env.example .env'
       - 'composer install --no-interaction --optimize-autoloader'
       - 'php artisan storage:link'
     deploy:
+      - 'php artisan key:generate --force'
       - 'php artisan migrate --force'
       - 'php artisan db:seed --force'
-    runtime: php-8.2
+    env:
+      APP_ENV: production
+      APP_DEBUG: false
+      DB_CONNECTION: mysql
+      SESSION_DRIVER: cookie
+      FILESYSTEM_DISK: public
 
 database:
   production:
