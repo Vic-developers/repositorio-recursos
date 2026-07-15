@@ -28,7 +28,6 @@ class ResourceController extends Controller
         $query = Resource::query()
             ->inTenant()
             ->with(['categories', 'tags', 'folder', 'creator'])
-            ->whereNull('folder_id')
             ->when($request->type, fn($q, $v) => $q->where('type', $v))
             ->when($request->status, fn($q, $v) => $q->where('status', $v))
             ->when($request->search, function ($q, $v) {
