@@ -17,14 +17,33 @@ Route::post('/login', [WebAuthController::class, 'login']);
 Route::get('/embed/{uuid}', EmbedController::class)->name('embed.player');
 Route::get('/player/{uuid}', PlayerController::class)->name('player.show');
 
-// Serve SCORM files directly (for Cloud/deployed environments)
-Route::get('/scorm-file/{uuid}/{path?}', function (string $uuid, string $path = '') {
-    $basePath = storage_path('app/public/scorm/' . $uuid);
-    $fullPath = $path ? $basePath . '/' . ltrim($path, '/') : $basePath;
-    if (!file_exists($fullPath)) {
+// Serve SCORM files through Laravel (handles arbitrary-depth subpaths via fallback)
+Route::fallback(function (\Illuminate\Http\Request $request) {
+    $path = $request->path();
+    if (!str_starts_with($path, 'scorm-file/')) {
         abort(404);
     }
-    $mime = match (pathinfo($fullPath, PATHINFO_EXTENSION)) {
+    $parts = explode('/', $path, 3);
+    $uuid = $parts[1] ?? '';
+    $subPath = $parts[2] ?? '';
+
+    $baseDir = storage_path('app/public/scorm/' . $uuid);
+    if (!is_dir($baseDir)) abort(404);
+
+    if ($subPath === '') {
+        foreach (['index.html', 'launch.html', 'index.htm', 'launch.htm'] as $file) {
+            if (file_exists($baseDir . '/' . $file)) {
+                return response()->file($baseDir . '/' . $file, ['Content-Type' => 'text/html']);
+            }
+        }
+        abort(404);
+    }
+
+    $fullPath = $baseDir . '/' . $subPath;
+    if (!file_exists($fullPath) || is_dir($fullPath)) abort(404);
+
+    $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+    $mime = match ($ext) {
         'html', 'htm' => 'text/html',
         'js' => 'application/javascript',
         'css' => 'text/css',
@@ -36,10 +55,11 @@ Route::get('/scorm-file/{uuid}/{path?}', function (string $uuid, string $path = 
         'svg' => 'image/svg+xml',
         'woff' => 'font/woff',
         'woff2' => 'font/woff2',
+        'swf' => 'application/x-shockwave-flash',
         default => mime_content_type($fullPath) ?: 'application/octet-stream',
     };
     return response()->file($fullPath, ['Content-Type' => $mime]);
-})->where('path', '.*')->name('scorm.file');
+})->name('scorm.file');
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {

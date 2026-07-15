@@ -17,7 +17,7 @@ class PlayerController extends Controller
         
         $scormService = app(ScormService::class);
         $launchFile = $scormService->getLaunchFile($resource->uuid);
-        $scormContentUrl = route('scorm.file', ['uuid' => $resource->uuid, 'path' => $launchFile]);
+        $scormContentUrl = url('/scorm-file/' . $resource->uuid . '/' . $launchFile);
         $embedUrl = url('/embed/' . $resource->uuid);
         
         return view('player.index', [
