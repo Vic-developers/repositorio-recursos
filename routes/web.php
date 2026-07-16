@@ -24,6 +24,16 @@ Route::get('/resource-file/{uuid}/{filename}', function (string $uuid, string $f
     if (!$resource->file_path) abort(404);
 
     $fullPath = storage_path('app/public/' . $resource->file_path);
+
+    // Restore file from DB if missing from disk
+    if (!file_exists($fullPath) && $resource->file_data) {
+        $dir = dirname($fullPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        file_put_contents($fullPath, $resource->file_data);
+    }
+
     if (!file_exists($fullPath)) abort(404);
 
     $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
@@ -55,6 +65,16 @@ use Illuminate\Support\Facades\Storage;
 
 Route::get('/scorm-file/{uuid}/{path?}', function (string $uuid, string $path = '') {
     $baseDir = storage_path('app/public/scorm/' . $uuid);
+
+    // If extract dir missing, try to restore from DB
+    if (!is_dir($baseDir)) {
+        $resource = \App\Models\Resource::where('uuid', $uuid)->first();
+        if ($resource && $resource->file_data) {
+            $svc = app(\App\Services\ScormService::class);
+            $svc->ensureExtracted($resource);
+        }
+    }
+
     if (!is_dir($baseDir)) abort(404);
 
     if (empty($path)) {

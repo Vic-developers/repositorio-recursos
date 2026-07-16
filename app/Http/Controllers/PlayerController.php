@@ -49,6 +49,15 @@ class PlayerController extends Controller
         if ($resource->type !== 'H5P') abort(404);
 
         $filePath = storage_path('app/public/' . $resource->file_path);
+
+        // Restore ZIP from DB if missing
+        if (!file_exists($filePath) && $resource->file_data) {
+            $dir = dirname($filePath);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            file_put_contents($filePath, $resource->file_data);
+        }
         if (!file_exists($filePath)) abort(404);
 
         // H5P packages are ZIP files; extract on-the-fly and serve index.html

@@ -30,9 +30,20 @@ class ScormService
         }
 
         $storedPath = storage_path('app/public/' . $resource->file_path);
+
+        // Restore ZIP from DB if file missing from disk
         if (!file_exists($storedPath)) {
-            logger()->error('SCORM: Stored file not found for re-extraction', ['path' => $storedPath]);
-            return false;
+            if ($resource->file_data) {
+                $dir = dirname($storedPath);
+                if (!is_dir($dir)) {
+                    @mkdir($dir, 0755, true);
+                }
+                file_put_contents($storedPath, $resource->file_data);
+                logger()->info('SCORM: Restored zip from DB', ['uuid' => $resource->uuid]);
+            } else {
+                logger()->error('SCORM: Stored file not found and no DB backup', ['uuid' => $resource->uuid]);
+                return false;
+            }
         }
 
         logger()->info('SCORM: Re-extracting package', ['uuid' => $resource->uuid, 'path' => $storedPath]);
@@ -41,16 +52,12 @@ class ScormService
         return is_dir($extractDir);
     }
 
-    /**
-     * Check if a zip file is a SCORM package by looking for imsmanifest.xml
-     */
     public function isScormPackage(string $filePath): bool
     {
         $zip = new \ZipArchive();
         if ($zip->open($filePath) === true) {
             $hasManifest = $zip->locateName('imsmanifest.xml') !== false;
             if (!$hasManifest) {
-                // Also check in subdirectories
                 for ($i = 0; $i < $zip->numFiles; $i++) {
                     $name = $zip->getNameIndex($i);
                     if (str_ends_with($name, 'imsmanifest.xml')) {
@@ -65,9 +72,6 @@ class ScormService
         return false;
     }
 
-    /**
-     * Extract SCORM package to storage
-     */
     public function extractPackage(string $resourceId, string $filePath): string
     {
         $extractDir = $this->storagePath . '/' . $resourceId;
@@ -105,10 +109,6 @@ class ScormService
         return $extractDir;
     }
 
-    /**
-     * Get the launch file path from imsmanifest.xml
-     * Prefers HTML5 over Flash
-     */
     public function getLaunchFile(string $resourceId): string
     {
         $extractDir = $this->storagePath . '/' . $resourceId;
@@ -126,13 +126,9 @@ class ScormService
             }
         }
         
-        // Fallback: find any HTML file
         return $this->findFirstHtmlFile($extractDir);
     }
 
-    /**
-     * Get full launch file path (resourceId/launchFile)
-     */
     public function getLaunchFilePath(string $resourceId): string
     {
         return $resourceId . '/' . $this->getLaunchFile($resourceId);
@@ -156,18 +152,15 @@ class ScormService
         $xml = simplexml_load_file($manifestPath);
         if ($xml === false) return null;
 
-        // Register SCORM namespaces
         $namespaces = $xml->getNamespaces(true);
         $ns = $namespaces[''] ?? '';
         $adlcp = $namespaces['adlcp'] ?? 'http://www.adlnet.org/xsd/adlcp_rootv1p2';
         
-        // Try to find the launch file from <resource> with scormType="sco"
         if (isset($xml->resources->resource)) {
             $bestMatch = null;
             foreach ($xml->resources->resource as $resource) {
                 $attrs = $resource->attributes();
                 
-                // Get scormType from various possible namespaces
                 $scormType = '';
                 foreach (['adlcp', '', 'adlseq'] as $prefix) {
                     $nsAttr = $prefix ? ($attrs->attributes($namespaces[$prefix] ?? '') ?? null) : $attrs;
@@ -180,7 +173,6 @@ class ScormService
                 $href = (string)$attrs['href'];
                 
                 if (empty($scormType) || strtolower($scormType) === 'sco') {
-                    // Prefer HTML5
                     if (str_contains(strtolower($href), 'html5') || str_contains($href, '.html')) {
                         return $href;
                     }
@@ -195,7 +187,6 @@ class ScormService
             if ($bestMatch) return $bestMatch;
         }
 
-        // Try organizations > item approach (SCORM 2004)
         if (isset($xml->organizations->organization)) {
             foreach ($xml->organizations->organization as $org) {
                 foreach ($org->item as $item) {

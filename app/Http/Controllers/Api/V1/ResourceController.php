@@ -82,6 +82,9 @@ class ResourceController extends Controller
                 $data['file_size_bytes'] = $file->getSize();
                 $data['file_size_display'] = $this->formatBytes($file->getSize());
 
+                // Store file bytes in DB for persistence across deploys
+                $data['file_data'] = file_get_contents($file->getRealPath());
+
                 // Use stored file path instead of temp path (Octane compat)
                 $storedPath = storage_path('app/public/' . $path);
                 if (file_exists($storedPath) && $this->scormService->isScormPackage($storedPath)) {
@@ -123,6 +126,7 @@ class ResourceController extends Controller
                 $data['mime_type'] = $file->getMimeType();
                 $data['file_size_bytes'] = $file->getSize();
                 $data['file_size_display'] = $this->formatBytes($file->getSize());
+                $data['file_data'] = file_get_contents($file->getRealPath());
 
                 $storedPath = storage_path('app/public/' . $path);
                 if (file_exists($storedPath) && $this->scormService->isScormPackage($storedPath)) {

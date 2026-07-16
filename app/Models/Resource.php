@@ -26,6 +26,7 @@ class Resource extends Model
         'original_file_name',
         'mime_type',
         'file_path',
+        'file_data',
         'file_size_bytes',
         'file_size_display',
         'thumbnail_url',
