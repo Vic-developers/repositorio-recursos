@@ -2,14 +2,13 @@ id: repositorio-recursos
 environments:
   production:
     build:
-      - 'if [ ! -f .env ]; then cp .env.example .env; fi'
+      - 'if [ ! -f .env ]; then cp .env.example .env && php artisan key:generate; fi'
       - 'sed -i "/SANCTUM_STATEFUL_DOMAINS/d" .env || true'
       - 'composer install --no-interaction --optimize-autoloader'
       - 'npm install'
       - 'npm run build'
       - 'php artisan storage:link'
     deploy:
-      - 'php artisan key:generate'
       - 'php artisan migrate --force'
       - 'php artisan db:seed --force'
     runtime: php-8.2

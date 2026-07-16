@@ -9,33 +9,32 @@ class EmbedController extends Controller
 {
     public function __invoke(string $uuid)
     {
-        try {
-            $resource = Resource::where('uuid', $uuid)->firstOrFail();
+        $resource = Resource::where('uuid', $uuid)->firstOrFail();
 
-            if (!$resource->isScorm()) {
-                abort(404, 'Not a SCORM resource');
-            }
+        if (!$resource->isScorm()) {
+            abort(404, 'Not a SCORM resource');
+        }
 
-            $scormService = app(ScormService::class);
+        $scormService = app(ScormService::class);
 
-            if (!$scormService->ensureExtracted($resource)) {
-                abort(404, 'SCORM content not found. Upload the file again.');
-            }
+        if (!$scormService->ensureExtracted($resource)) {
+            abort(404, 'SCORM content not found. Upload the file again.');
+        }
 
-            $baseDir = storage_path('app/public/scorm/' . $resource->uuid);
-            $launchFile = $scormService->getLaunchFile($resource->uuid);
-            $launchPath = $baseDir . '/' . $launchFile;
+        $baseDir = storage_path('app/public/scorm/' . $resource->uuid);
+        $launchFile = $scormService->getLaunchFile($resource->uuid);
+        $launchPath = $baseDir . '/' . $launchFile;
 
-            if (!file_exists($launchPath)) {
-                abort(404, 'SCORM content not found. Upload the file again.');
-            }
+        if (!file_exists($launchPath)) {
+            abort(404, 'SCORM content not found. Upload the file again.');
+        }
 
-            $html = file_get_contents($launchPath);
-            if ($html === false) {
-                abort(500, 'Failed to read SCORM launch file');
-            }
+        $html = file_get_contents($launchPath);
+        if ($html === false) {
+            abort(500, 'Failed to read SCORM launch file');
+        }
 
-            $scormApi = <<<'JS'
+        $scormApi = <<<'JS'
 <base href="{{BASE_URL}}">
 <script>
 (function(){
@@ -47,31 +46,26 @@ try{Object.defineProperty(window,'parent',{value:window});Object.defineProperty(
 </script>
 JS;
 
-            $html = preg_replace('/<base\b[^>]*>/i', '', $html);
-            if ($html === null) {
-                abort(500, 'preg_replace for base tag failed');
-            }
-
-            $launchDir = dirname($launchFile);
-            $baseUrl = url('/scorm-file/' . $resource->uuid . '/' . ($launchDir !== '.' ? $launchDir . '/' : ''));
-            $inject = str_replace('{{BASE_URL}}', $baseUrl, $scormApi);
-            $html = preg_replace('/<head[^>]*>/i', '$0' . "\n" . $inject, $html);
-            if ($html === null) {
-                abort(500, 'preg_replace for head tag failed');
-            }
-
-            $resource->increment('view_count');
-
-            return response($html, 200, [
-                'Content-Type' => 'text/html; charset=utf-8',
-                'X-Frame-Options' => 'ALLOWALL',
-                'Content-Security-Policy' => "frame-ancestors *",
-                'Cache-Control' => 'no-cache, no-store',
-            ]);
-        } catch (\Throwable $e) {
-            $msg = 'EmbedController error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
-            logger()->error($msg, ['trace' => $e->getTraceAsString()]);
-            return response($msg, 500, ['Content-Type' => 'text/plain']);
+        $html = preg_replace('/<base\b[^>]*>/i', '', $html);
+        if ($html === null) {
+            abort(500, 'Failed to process SCORM content');
         }
+
+        $launchDir = dirname($launchFile);
+        $baseUrl = url('/scorm-file/' . $resource->uuid . '/' . ($launchDir !== '.' ? $launchDir . '/' : ''));
+        $inject = str_replace('{{BASE_URL}}', $baseUrl, $scormApi);
+        $html = preg_replace('/<head[^>]*>/i', '$0' . "\n" . $inject, $html);
+        if ($html === null) {
+            abort(500, 'Failed to process SCORM content');
+        }
+
+        $resource->increment('view_count');
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=utf-8',
+            'X-Frame-Options' => 'ALLOWALL',
+            'Content-Security-Policy' => "frame-ancestors *",
+            'Cache-Control' => 'no-cache, no-store',
+        ]);
     }
 }

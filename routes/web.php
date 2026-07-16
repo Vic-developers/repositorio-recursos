@@ -17,50 +17,7 @@ Route::post('/login', [WebAuthController::class, 'login']);
 Route::get('/embed/{uuid}', EmbedController::class)->name('embed.player');
 Route::get('/player/{uuid}', PlayerController::class)->name('player.show');
 
-// Debug: step-by-step SCORM diagnostic (REMOVE after fixing)
-Route::get('/debug-scorm/{uuid}', function (string $uuid) {
-    $steps = [];
-    try {
-        $resource = \App\Models\Resource::where('uuid', $uuid)->first();
-        $steps[] = ['step' => 'find_resource', 'ok' => $resource !== null, 'type' => $resource?->type, 'file_path' => $resource?->file_path];
-        if (!$resource) { return response(json_encode($steps, JSON_PRETTY_PRINT), 200, ['Content-Type' => 'text/plain']); }
 
-        $steps[] = ['step' => 'is_scorm', 'ok' => $resource->isScorm()];
-
-        $svc = app(\App\Services\ScormService::class);
-        $extracted = $svc->ensureExtracted($resource);
-        $steps[] = ['step' => 'ensure_extracted', 'ok' => $extracted];
-
-        $baseDir = storage_path('app/public/scorm/' . $uuid);
-        $steps[] = ['step' => 'base_dir_exists', 'ok' => is_dir($baseDir), 'path' => $baseDir];
-
-        $launchFile = $svc->getLaunchFile($uuid);
-        $launchPath = $baseDir . '/' . $launchFile;
-        $steps[] = ['step' => 'launch_file', 'ok' => file_exists($launchPath), 'launch_file' => $launchFile, 'launch_path' => $launchPath];
-
-        $html = @file_get_contents($launchPath);
-        $steps[] = ['step' => 'read_file', 'ok' => $html !== false, 'length' => $html !== false ? strlen($html) : 0];
-
-        if ($html !== false) {
-            $html2 = @preg_replace('/<base\b[^>]*>/i', '', $html);
-            $steps[] = ['step' => 'preg_base', 'ok' => $html2 !== null, 'length' => $html2 !== null ? strlen($html2) : 0];
-
-            $launchDir = dirname($launchFile);
-            $baseUrl = url('/scorm-file/' . $uuid . '/' . ($launchDir !== '.' ? $launchDir . '/' : ''));
-            $scormApi = '<base href="{{BASE_URL}}"><script>window.API={};</script>';
-            $inject = str_replace('{{BASE_URL}}', $baseUrl, $scormApi);
-            $html3 = @preg_replace('/<head[^>]*>/i', '$0' . "\n" . $inject, $html2 ?? '');
-            $steps[] = ['step' => 'preg_head', 'ok' => $html3 !== null];
-
-            $incrementOk = true;
-            try { $resource->increment('view_count'); } catch (\Throwable $e) { $incrementOk = $e->getMessage(); }
-            $steps[] = ['step' => 'increment', 'ok' => $incrementOk === true, 'error' => $incrementOk !== true ? $incrementOk : null];
-        }
-    } catch (\Throwable $e) {
-        $steps[] = ['step' => 'exception', 'ok' => false, 'error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()];
-    }
-    return response(json_encode($steps, JSON_PRETTY_PRINT), 200, ['Content-Type' => 'text/plain']);
-});
 
 // Serve SCORM assets (JS, CSS, images, etc.) via explicit route
 use Illuminate\Support\Facades\Storage;
