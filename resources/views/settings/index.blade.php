@@ -217,7 +217,7 @@ function settingsManager() {
                 const res = await fetch('/api/v1/settings', {
                     headers: {
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     }
                 });
                 const json = await res.json();
@@ -265,7 +265,7 @@ function settingsManager() {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     },
                     body: JSON.stringify({ module, settings: data })
                 });

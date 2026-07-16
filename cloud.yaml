@@ -2,13 +2,13 @@ id: repositorio-recursos
 environments:
   production:
     build:
-      - 'cp .env.example .env'
+      - 'if [ ! -f .env ]; then cp .env.example .env; fi'
       - 'composer install --no-interaction --optimize-autoloader'
       - 'npm install'
       - 'npm run build'
       - 'php artisan storage:link'
     deploy:
-      - 'php artisan key:generate --force'
+      - 'php artisan key:generate'
       - 'php artisan migrate --force'
       - 'php artisan db:seed --force'
     runtime: php-8.2

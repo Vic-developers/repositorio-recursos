@@ -186,7 +186,7 @@ function uploadForm() {
                 const res = await fetch('/api/v1/folders', {
                     headers: {
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     }
                 });
                 const json = await res.json();
@@ -236,6 +236,7 @@ function uploadForm() {
                 xhr.open('POST', '/api/v1/resources');
                 xhr.setRequestHeader('Authorization', 'Bearer {{ session('api_token') ?? '' }}');
                 xhr.setRequestHeader('X-Tenant', '{{ session('tenant_slug') ?? 'principal' }}');
+                xhr.setRequestHeader('Accept', 'application/json');
 
                 xhr.upload.onprogress = (e) => {
                     if (e.lengthComputable) {

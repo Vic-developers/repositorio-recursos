@@ -317,7 +317,7 @@ function resourcesGrid() {
         async loadFolderTree() {
             try {
                 const res = await fetch('/api/v1/folders?tree=true', {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await res.json();
                 if (json.success) {
@@ -357,7 +357,7 @@ function resourcesGrid() {
                 const params = new URLSearchParams(window.location.search);
                 params.set('page', this.currentPage);
                 const response = await fetch('/api/v1/resources?' + params.toString(), {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await response.json();
                 if (json.success) {
@@ -399,7 +399,7 @@ function searchBar() {
         async loadFolders() {
             try {
                 const res = await fetch('/api/v1/folders', {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await res.json();
                 if (json.success) {

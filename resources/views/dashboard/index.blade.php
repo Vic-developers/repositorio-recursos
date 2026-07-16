@@ -151,7 +151,7 @@ function dashboard() {
         async load() {
             try {
                 const res = await fetch('/api/v1/dashboard', {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await res.json();
                 if (json.success) this.data = json.data;

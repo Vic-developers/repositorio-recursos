@@ -64,7 +64,7 @@ function deleteConfirm() {
             try {
                 const response = await fetch('/api/v1/resources/' + this.resource.id + '/delete', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Content-Type': 'application/json' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json', 'Content-Type': 'application/json' }
                 });
                 const json = await response.json().catch(() => ({}));
                 if (response.ok) {

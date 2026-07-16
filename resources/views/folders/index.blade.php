@@ -139,7 +139,7 @@ function foldersManager() {
         async loadFolders() {
             try {
                 const res = await fetch('/api/v1/folders', {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await res.json();
                 if (json.success) this.folders = json.data;
@@ -161,7 +161,7 @@ function foldersManager() {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     },
                     body: JSON.stringify(this.createForm)
                 });
@@ -197,7 +197,7 @@ function foldersManager() {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     },
                     body: JSON.stringify(this.editForm)
                 });
@@ -229,7 +229,7 @@ function foldersManager() {
                     method: 'DELETE',
                     headers: {
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     }
                 });
                 const json = await res.json();

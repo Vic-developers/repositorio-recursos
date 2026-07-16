@@ -67,7 +67,7 @@ function tagsManager() {
         async loadTags() {
             try {
                 const res = await fetch('/api/v1/tags', {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await res.json();
                 if (json.success) this.tags = json.data;
@@ -85,7 +85,7 @@ function tagsManager() {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     },
                     body: JSON.stringify(this.createForm)
                 });

@@ -160,7 +160,7 @@ function categoriesManager() {
         async loadCategories() {
             try {
                 const res = await fetch('/api/v1/categories?tree=true', {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await res.json();
                 if (json.success) {
@@ -177,7 +177,7 @@ function categoriesManager() {
         async loadAllCategories() {
             try {
                 const res = await fetch('/api/v1/categories', {
-                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}' }
+                    headers: { 'Authorization': 'Bearer {{ session('api_token') ?? '' }}', 'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json' }
                 });
                 const json = await res.json();
                 if (json.success) this.allCategories = json.data;
@@ -217,7 +217,7 @@ function categoriesManager() {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     },
                     body: JSON.stringify(this.form)
                 });
@@ -247,7 +247,7 @@ function categoriesManager() {
                     method: 'DELETE',
                     headers: {
                         'Authorization': 'Bearer {{ session('api_token') ?? '' }}',
-                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}'
+                        'X-Tenant': '{{ session('tenant_slug') ?? 'principal' }}', 'Accept': 'application/json'
                     }
                 });
                 const json = await res.json();
