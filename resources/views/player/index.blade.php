@@ -7,7 +7,9 @@
     <style>
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
         html, body { width:100%; height:100%; overflow:hidden; background:#000; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif }
-        iframe#scorm-frame { width:100%; height:100%; border:none; display:block }
+        iframe#content-frame { width:100%; height:100%; border:none; display:block }
+        #content-area { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f8fafc }
+        #content-area img, #content-area video { max-width:100%; max-height:100%; object-fit:contain }
         #overlay {
             position:fixed; top:0; left:0; right:0; z-index:999;
             background:linear-gradient(180deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.65) 50%,transparent 100%);
@@ -34,7 +36,10 @@
             z-index:998; transition:opacity .4s ease
         }
         #loader.hidden { opacity:0; pointer-events:none }
+        #loader.loader-light { background:#f8fafc }
+        #loader.loader-light p { color:#64748b }
         .spinner { width:44px; height:44px; border:3px solid rgba(255,255,255,.1); border-top-color:#3b82f6; border-radius:50%; animation:spin .7s linear infinite }
+        .spinner-dark { border-color:rgba(0,0,0,.1); border-top-color:#3b82f6 }
         @keyframes spin { to{transform:rotate(360deg)} }
         #loader p { margin-top:14px; color:#94a3b8; font-size:14px }
         #share-modal {
@@ -89,8 +94,10 @@
     </style>
 </head>
 <body>
-    <div id="loader">
-        <div class="spinner"></div>
+@php $isScorm = $resource->isScorm(); $isLink = $resource->type === 'Link'; $isStatic = !$isScorm && !$isLink && $resource->type !== 'H5P'; @endphp
+
+    <div id="loader" class="{{ $isStatic ? 'loader-light' : '' }}">
+        <div class="spinner {{ $isStatic ? 'spinner-dark' : '' }}"></div>
         <p>Cargando recurso...</p>
     </div>
 
@@ -118,8 +125,38 @@
         </div>
     </div>
 
-    <iframe id="scorm-frame" src="{{ $embedUrl }}" allow="autoplay *; fullscreen *" allowfullscreen
+    @if ($isScorm || $resource->type === 'H5P')
+    <iframe id="content-frame" src="{{ $contentUrl }}" allow="autoplay *; fullscreen *" allowfullscreen
         onload="document.getElementById('loader').classList.add('hidden')"></iframe>
+    @elseif ($isStatic)
+    <div id="content-area">
+        @if ($resource->type === 'Video' && $fileUrl)
+        <video controls autoplay onloadeddata="document.getElementById('loader').classList.add('hidden')">
+            <source src="{{ $fileUrl }}">
+        </video>
+        @elseif ($resource->type === 'Image' && $fileUrl)
+        <img src="{{ $fileUrl }}" onload="document.getElementById('loader').classList.add('hidden')">
+        @elseif (in_array($resource->type, ['PDF', 'Document']) && $fileUrl)
+        <iframe src="{{ $fileUrl }}" style="width:100%;height:100%;border:none" onload="document.getElementById('loader').classList.add('hidden')"></iframe>
+        @else
+        <div style="text-align:center;padding:40px;color:#64748b" onload="document.getElementById('loader').classList.add('hidden')">
+            <p>Vista previa no disponible para este tipo de recurso.</p>
+            @if ($fileUrl)
+            <a href="{{ $fileUrl }}" target="_blank" class="btn" style="margin-top:16px;background:#3b82f6;color:#fff;text-decoration:none;display:inline-flex">Descargar archivo</a>
+            @endif
+        </div>
+        @endif
+    </div>
+    @elseif ($isLink)
+    <div id="content-area" style="background:#1e293b;flex-direction:column;gap:16px;color:#e2e8f0">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        <p style="font-size:15px">Este recurso es un enlace externo</p>
+        <a href="{{ $embedUrl }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 24px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-size:14px;font-weight:500" onclick="document.getElementById('loader').classList.add('hidden')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Abrir enlace externo
+        </a>
+    </div>
+    @endif
 
     <div id="toast" class="toast"></div>
 
@@ -148,7 +185,7 @@
             </div>
 
             <div class="share-option">
-                <label>Enlace embed (Moodle)</label>
+                <label>Enlace embed</label>
                 <div class="copy-row">
                     <input type="text" value="{{ $embedUrl }}" readonly onclick="this.select()">
                     <button onclick="copyText(this,'{{ $embedUrl }}')">Copiar</button>
@@ -176,12 +213,13 @@
     </div>
 
     <script>
-    // SCORM API stubs — el SCORM busca window.parent.API desde el iframe
+    @if ($isScorm)
     (function(){
     var _data={'cmi.core._children':'student_id,student_name,lesson_location,credit,lesson_status,entry,score,total_time,lesson_mode,exit,session_time,suspend_data,launch_data,incomplete,comments,comments_from_lms','cmi.core.student_id':'guest','cmi.core.student_name':'Invitado','cmi.core.lesson_status':'not attempted','cmi.core.lesson_mode':'normal','cmi.core.credit':'no-credit','cmi.core.entry':'ab-initio','cmi.core.score._children':'raw,min,max','cmi.core.score.raw':'','cmi.core.score.min':'0','cmi.core.score.max':'100','cmi.core.total_time':'00:00:00','cmi.core.session_time':'00:00:00','cmi.suspend_data':'','cmi.launch_data':'','cmi.comments':'','cmi.comments_from_lms':'','cmi.objectives._children':'id,score,status,description','cmi.objectives._count':'0','cmi.student_data._children':'mastery_score,max_time_allowed,time_limit_action','cmi.student_data.mastery_score':'','cmi.student_preference._children':'audio,language,speed,text','cmi.student_preference.audio':'','cmi.student_preference.language':'','cmi.student_preference.speed':'','cmi.student_preference.text':'','cmi.interactions._children':'id,objectives,time,type,correct_responses,weighting,student_response,result,latency','cmi.interactions._count':'0'},_err=0,_errs={0:'No error',101:'General exception',201:'Invalid argument error',202:'Element cannot have children',203:'Element not an array',301:'Not initialized',401:'Not implemented error',402:'Invalid set value',403:'Element is read only',404:'Element is write only',405:'Incorrect data type'};
     window.API={LMSInitialize:function(){_err=0;return'true'},LMSFinish:function(){_err=0;return'true'},LMSGetValue:function(n){var r=_data[n];if(r!==void 0){_err=0;return r}_err=201;return''},LMSSetValue:function(n,v){_err=0;_data[n]=String(v);return'true'},LMSCommit:function(){_err=0;return'true'},LMSGetLastError:function(){return _err},LMSGetErrorString:function(c){return _errs[c]||'Unknown'},LMSGetDiagnostic:function(c){return _errs[c]||'Unknown'}};
     window.API_1484_11={Initialize:function(){_err=0;return'true'},Terminate:function(){_err=0;return'true'},GetValue:function(n){var r=_data[n];if(r!==void 0){_err=0;return r}_err=201;return''},SetValue:function(n,v){_err=0;_data[n]=String(v);return'true'},Commit:function(){_err=0;return'true'},GetLastError:function(){return _err},GetErrorString:function(c){return _errs[c]||'Unknown'},GetDiagnostic:function(c){return _errs[c]||'Unknown'}};
     })();
+    @endif
 
     let overlayTimer;
     document.addEventListener('mousemove',function(){clearTimeout(overlayTimer);document.getElementById('overlay').classList.add('visible');overlayTimer=setTimeout(function(){document.getElementById('overlay').classList.remove('visible')},3000)});

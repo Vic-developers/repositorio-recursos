@@ -16,6 +16,37 @@ Route::post('/login', [WebAuthController::class, 'login']);
 // Public routes for viewing resources (no auth needed for shared links)
 Route::get('/embed/{uuid}', EmbedController::class)->name('embed.player');
 Route::get('/player/{uuid}', PlayerController::class)->name('player.show');
+Route::get('/h5p-embed/{uuid}', [PlayerController::class, 'h5pEmbed'])->name('h5p.embed');
+
+// Serve resource files (PDF, video, image, document)
+Route::get('/resource-file/{uuid}/{filename}', function (string $uuid, string $filename) {
+    $resource = \App\Models\Resource::where('uuid', $uuid)->firstOrFail();
+    if (!$resource->file_path) abort(404);
+
+    $fullPath = storage_path('app/public/' . $resource->file_path);
+    if (!file_exists($fullPath)) abort(404);
+
+    $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+    $mime = match ($ext) {
+        'pdf' => 'application/pdf',
+        'mp4' => 'video/mp4',
+        'webm' => 'video/webm',
+        'jpg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'ppt' => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'mp3' => 'audio/mpeg',
+        'zip' => 'application/zip',
+        default => mime_content_type($fullPath) ?: 'application/octet-stream',
+    };
+    return response()->file($fullPath, ['Content-Type' => $mime]);
+})->where('filename', '.*')->name('resource.file');
 
 
 
