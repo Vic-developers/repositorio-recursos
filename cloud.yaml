@@ -3,6 +3,7 @@ environments:
   production:
     build:
       - 'if [ ! -f .env ]; then cp .env.example .env; fi'
+      - 'sed -i "/SANCTUM_STATEFUL_DOMAINS/d" .env || true'
       - 'composer install --no-interaction --optimize-autoloader'
       - 'npm install'
       - 'npm run build'
