@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Resource;
+use Illuminate\Support\Facades\Storage;
+
 class ScormService
 {
     private string $storagePath;
@@ -9,6 +12,33 @@ class ScormService
     public function __construct()
     {
         $this->storagePath = storage_path('app/public/scorm');
+    }
+
+    public function ensureExtracted(Resource $resource): bool
+    {
+        $extractDir = $this->storagePath . '/' . $resource->uuid;
+        if (is_dir($extractDir)) {
+            $files = scandir($extractDir);
+            if (count($files) > 2) {
+                return true;
+            }
+        }
+
+        if (!$resource->file_path) {
+            logger()->error('SCORM: No file_path for resource', ['uuid' => $resource->uuid]);
+            return false;
+        }
+
+        $storedPath = storage_path('app/public/' . $resource->file_path);
+        if (!file_exists($storedPath)) {
+            logger()->error('SCORM: Stored file not found for re-extraction', ['path' => $storedPath]);
+            return false;
+        }
+
+        logger()->info('SCORM: Re-extracting package', ['uuid' => $resource->uuid, 'path' => $storedPath]);
+        $this->extractPackage($resource->uuid, $storedPath);
+
+        return is_dir($extractDir);
     }
 
     /**

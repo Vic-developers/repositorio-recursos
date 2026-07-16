@@ -16,14 +16,22 @@ class PlayerController extends Controller
         }
         
         $scormService = app(ScormService::class);
+        
+        if (!$scormService->ensureExtracted($resource)) {
+            abort(404, 'SCORM content not found. Upload the file again.');
+        }
+        
         $launchFile = $scormService->getLaunchFile($resource->uuid);
         $scormContentUrl = url('/scorm-file/' . $resource->uuid . '/' . $launchFile);
         $embedUrl = url('/embed/' . $resource->uuid);
         
-        return view('player.index', [
+        return response(view('player.index', [
             'resource' => $resource,
             'scormContentUrl' => $scormContentUrl,
             'embedUrl' => $embedUrl,
+        ]))->withHeaders([
+            'X-Frame-Options' => 'ALLOWALL',
+            'Content-Security-Policy' => "frame-ancestors *",
         ]);
     }
 }

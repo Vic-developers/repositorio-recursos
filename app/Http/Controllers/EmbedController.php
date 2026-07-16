@@ -16,6 +16,11 @@ class EmbedController extends Controller
         }
 
         $scormService = app(ScormService::class);
+
+        if (!$scormService->ensureExtracted($resource)) {
+            abort(404, 'SCORM content not found. Upload the file again.');
+        }
+
         $baseDir = storage_path('app/public/scorm/' . $resource->uuid);
         $launchFile = $scormService->getLaunchFile($resource->uuid);
         $launchPath = $baseDir . '/' . $launchFile;
