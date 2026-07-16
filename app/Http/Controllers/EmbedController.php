@@ -48,8 +48,9 @@ JS;
         // Remove existing <base> tags
         $html = preg_replace('/<base\b[^>]*>/i', '', $html);
 
-        // Inject base + API right after <head> (handles attributes like lang)
-        $baseUrl = url('/scorm-file/' . $resource->uuid . '/');
+        // Inject base (pointing to launch file's directory) + API
+        $launchDir = dirname($launchFile);
+        $baseUrl = url('/scorm-file/' . $resource->uuid . '/' . ($launchDir !== '.' ? $launchDir . '/' : ''));
         $inject = str_replace('{{BASE_URL}}', $baseUrl, $scormApi);
         $html = preg_replace('/<head[^>]*>/i', '$0' . "\n" . $inject, $html);
 

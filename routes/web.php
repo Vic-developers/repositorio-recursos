@@ -17,20 +17,14 @@ Route::post('/login', [WebAuthController::class, 'login']);
 Route::get('/embed/{uuid}', EmbedController::class)->name('embed.player');
 Route::get('/player/{uuid}', PlayerController::class)->name('player.show');
 
-// Serve SCORM files through Laravel (handles arbitrary-depth subpaths via fallback)
-Route::fallback(function (\Illuminate\Http\Request $request) {
-    $path = $request->path();
-    if (!str_starts_with($path, 'scorm-file/')) {
-        abort(404);
-    }
-    $parts = explode('/', $path, 3);
-    $uuid = $parts[1] ?? '';
-    $subPath = $parts[2] ?? '';
+// Serve SCORM assets (JS, CSS, images, etc.) via explicit route
+use Illuminate\Support\Facades\Storage;
 
+Route::get('/scorm-file/{uuid}/{path?}', function (string $uuid, string $path = '') {
     $baseDir = storage_path('app/public/scorm/' . $uuid);
     if (!is_dir($baseDir)) abort(404);
 
-    if ($subPath === '') {
+    if (empty($path)) {
         foreach (['index.html', 'launch.html', 'index.htm', 'launch.htm'] as $file) {
             if (file_exists($baseDir . '/' . $file)) {
                 return response()->file($baseDir . '/' . $file, ['Content-Type' => 'text/html']);
@@ -39,7 +33,7 @@ Route::fallback(function (\Illuminate\Http\Request $request) {
         abort(404);
     }
 
-    $fullPath = $baseDir . '/' . $subPath;
+    $fullPath = $baseDir . '/' . $path;
     if (!file_exists($fullPath) || is_dir($fullPath)) abort(404);
 
     $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
@@ -59,7 +53,7 @@ Route::fallback(function (\Illuminate\Http\Request $request) {
         default => mime_content_type($fullPath) ?: 'application/octet-stream',
     };
     return response()->file($fullPath, ['Content-Type' => $mime]);
-})->name('scorm.file');
+})->where('path', '.*')->name('scorm.file');
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {

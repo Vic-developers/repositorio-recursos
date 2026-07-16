@@ -118,7 +118,7 @@
         </div>
     </div>
 
-    <iframe id="scorm-frame" src="{{ $scormContentUrl }}" allow="autoplay *; fullscreen *" allowfullscreen
+    <iframe id="scorm-frame" src="{{ $embedUrl }}" allow="autoplay *; fullscreen *" allowfullscreen
         onload="document.getElementById('loader').classList.add('hidden')"></iframe>
 
     <div id="toast" class="toast"></div>
